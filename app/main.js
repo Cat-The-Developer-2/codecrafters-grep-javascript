@@ -22,7 +22,7 @@ function matchDigit(inputLine) {
 }
 
 function matchAlphanumeric(inputLine) {
-  const regex = /^[a-zA-Z0-9_]*$/;
+  const regex = /[a-zA-Z0-9_]/;
   const isAlphanumeric = regex.test(inputLine);
 
   return isAlphanumeric;
