@@ -1,31 +1,38 @@
 function matchPattern(inputLine, pattern) {
+  const result = [];
   for (let i = 0; i < pattern.length; i++) {
     if (pattern[i] === "\\") {
       if (pattern[i + 1] === "w") {
-        return matchAlphanumeric(inputLine);
+        result.push(matchAlphanumeric(inputLine));
       }
 
       if (pattern[i + 1] === "d") {
-        return matchDigit(inputLine);
+        result.push(matchDigit(inputLine));
       }
     }
 
     if (pattern[i] === "[") {
       const Closing = pattern.indexOf("]", i);
       const subPattern = pattern.slice(i, Closing + 1);
-      return positiveNegativeCharacter(inputLine, subPattern);
+      result.push(positiveNegativeCharacter(inputLine, subPattern));
     }
 
     if (inputLine.includes(pattern)) {
-      return true;
+      result.push(true);
     }
 
     if (!inputLine.includes(pattern)) {
-      return false;
+      result.push(false);
     } else {
       throw new Error(`Unhandled pattern ${pattern}`);
     }
   }
+
+  if (result.includes(false)) {
+    return false;
+  }
+
+  return true;
 
   // if (pattern === "\\d") {
   //   return matchDigit(inputLine);
