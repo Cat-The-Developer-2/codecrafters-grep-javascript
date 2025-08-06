@@ -1,38 +1,22 @@
 function matchPattern(inputLine, pattern) {
-  // if (pattern === "\\d") {
-  //   return matchDigit(inputLine);
-  // }
-
-  // if (pattern === "\\w") {
-  //   return matchAlphanumeric(inputLine);
-  // }
-
-  // if (pattern.startsWith("[") && pattern.endsWith("]")) {
-  //   return positiveNegativeCharacter(inputLine, pattern);
-  // }
-
-  pattern.map((p) => {
-    if (pattern === "\\d") {
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === "\\d") {
       return matchDigit(inputLine);
     }
 
-    if (pattern === "\\w") {
+    if (pattern[i] === "\\w") {
       return matchAlphanumeric(inputLine);
     }
 
-    if (pattern.startsWith("[") && pattern.endsWith("]")) {
+    if (pattern[i].startsWith("[") && pattern[i].endsWith("]")) {
       return positiveNegativeCharacter(inputLine, pattern);
     }
-    if (pattern.length === 1) {
+    if (pattern[i].length === 1) {
       return inputLine.includes(pattern);
     } else {
       throw new Error(`Unhandled pattern ${pattern}`);
     }
-  });
-
-  // if (pattern.length === 1) {
-  //   return inputLine.includes(pattern);
-  // }
+  }
 }
 
 function matchDigit(inputLine) {
