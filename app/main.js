@@ -1,6 +1,5 @@
 function matchPattern(inputLine, pattern) {
   const regex = new RegExp(pattern);
-
   return regex.test(inputLine);
 }
 
