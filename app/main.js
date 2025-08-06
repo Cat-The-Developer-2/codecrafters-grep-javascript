@@ -1,9 +1,20 @@
 function matchPattern(inputLine, pattern) {
+  if (pattern === "\\d") {
+    return matchDigit(inputLine);
+  }
+
   if (pattern.length === 1) {
     return inputLine.includes(pattern);
   } else {
     throw new Error(`Unhandled pattern ${pattern}`);
   }
+}
+
+function matchDigit(inputLine) {
+  const regex = /\d/;
+  const hasDigit = regex.test(inputLine);
+
+  return hasDigit;
 }
 
 function main() {
