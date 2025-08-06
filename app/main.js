@@ -1,5 +1,53 @@
 function matchPattern(inputLine, pattern) {
-  const regex = new RegExp(pattern);
+  // if (pattern === "\\d") {
+  //   return matchDigit(inputLine);
+  // }
+
+  // if (pattern === "\\w") {
+  //   return matchAlphanumeric(inputLine);
+  // }
+
+  // if (pattern.startsWith("[") && pattern.endsWith("]")) {
+  //   return positiveNegativeCharacter(inputLine, pattern);
+  // }
+
+  pattern.map((p) => {
+    if (pattern === "\\d") {
+      return matchDigit(inputLine);
+    }
+
+    if (pattern === "\\w") {
+      return matchAlphanumeric(inputLine);
+    }
+
+    if (pattern.startsWith("[") && pattern.endsWith("]")) {
+      return positiveNegativeCharacter(inputLine, pattern);
+    }
+    if (pattern.length === 1) {
+      return inputLine.includes(pattern);
+    } else {
+      throw new Error(`Unhandled pattern ${pattern}`);
+    }
+  });
+
+  // if (pattern.length === 1) {
+  //   return inputLine.includes(pattern);
+  // }
+}
+
+function matchDigit(inputLine) {
+  const regex = /\d/;
+  return regex.test(inputLine);
+}
+
+function matchAlphanumeric(inputLine) {
+  const regex = /[a-zA-Z0-9_]/;
+  return regex.test(inputLine);
+}
+
+function positiveNegativeCharacter(inputLine, pattern) {
+  const regex = new RegExp(`[${pattern.slice(1, -1)}]`);
+
   return regex.test(inputLine);
 }
 
