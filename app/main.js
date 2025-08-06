@@ -3,6 +3,10 @@ function matchPattern(inputLine, pattern) {
     return matchDigit(inputLine);
   }
 
+  if (pattern === "\\w") {
+    return matchAlphanumeric(inputLine);
+  }
+
   if (pattern.length === 1) {
     return inputLine.includes(pattern);
   } else {
@@ -15,6 +19,13 @@ function matchDigit(inputLine) {
   const hasDigit = regex.test(inputLine);
 
   return hasDigit;
+}
+
+function matchAlphanumeric(inputLine) {
+  const regex = /^[a-zA-Z0-9_]*$/;
+  const isAlphanumeric = regex.test(inputLine);
+
+  return isAlphanumeric;
 }
 
 function main() {
