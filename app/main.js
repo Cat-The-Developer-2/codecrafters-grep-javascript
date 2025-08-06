@@ -7,6 +7,10 @@ function matchPattern(inputLine, pattern) {
     return matchAlphanumeric(inputLine);
   }
 
+  if (pattern.startsWith("[") && pattern.endsWith("]")) {
+    return positiveCharacter(inputLine, pattern);
+  }
+
   if (pattern.length === 1) {
     return inputLine.includes(pattern);
   } else {
@@ -16,16 +20,18 @@ function matchPattern(inputLine, pattern) {
 
 function matchDigit(inputLine) {
   const regex = /\d/;
-  const hasDigit = regex.test(inputLine);
-
-  return hasDigit;
+  return regex.test(inputLine);
 }
 
 function matchAlphanumeric(inputLine) {
   const regex = /[a-zA-Z0-9_]/;
-  const isAlphanumeric = regex.test(inputLine);
+  return regex.test(inputLine);
+}
 
-  return isAlphanumeric;
+function positiveCharacter(inputLine, pattern) {
+  const regex = new RegExp(`[${pattern.slice(1, -1)}]`);
+
+  return regex.test(inputLine);
 }
 
 function main() {
