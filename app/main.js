@@ -61,6 +61,31 @@ function matchFrom(start, pattern, input, originalLength) {
 
     // Handle one-or-more quantifier '+'
     if (nextChar === "+") {
+      // For .+ (dot plus), we need special handling
+      if (pChar === ".") {
+        if (inputChar === undefined) return false;
+
+        // Find maximum number of matches (any character)
+        let maxMatches = input.length - i;
+        if (maxMatches === 0) return false;
+
+        // Try different numbers of matches (backtracking)
+        for (let matchCount = maxMatches; matchCount >= 1; matchCount--) {
+          const newI = i + matchCount;
+          const remainingInput = input.slice(newI);
+          const remainingPattern = pattern.slice(j + 2);
+
+          if (
+            matchFromHelper(remainingPattern, remainingInput, endsWithDollar)
+          ) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+
+      // For literal character +
       if (inputChar === undefined || inputChar !== pChar) return false;
 
       // Find maximum number of matches
@@ -117,7 +142,7 @@ function matchFrom(start, pattern, input, originalLength) {
       continue;
     }
 
-    // Wildcard: match any character
+    // Dot: match any character
     if (pChar === ".") {
       if (inputChar === undefined) return false;
       i++;
