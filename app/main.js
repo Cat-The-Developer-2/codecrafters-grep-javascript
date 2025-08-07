@@ -1,133 +1,119 @@
 function matchPattern(pattern, inputLine) {
-  // matches the start of a line
-  if (pattern.startsWith("^")) {
-    const remainingPattern = pattern.slice(1);
-
-    return inputLine.startsWith(remainingPattern);
-  }
-
-  // matches the end of a line
-  if (pattern.endsWith("$")) {
-    const remainingPattern = pattern.slice(0, -1);
-
-    return inputLine.endsWith(remainingPattern);
-  }
-
-  // "optional" quantifier
-  if (pattern.endsWith("?")) {
-    const acceptablePattern = pattern.slice(0, -2);
-    const one = pattern[pattern.length - 2];
-
-    if (
-      inputLine === acceptablePattern + one ||
-      inputLine === acceptablePattern
-    ) {
+  // Try matching from every possible starting index in input
+  for (let start = 0; start <= inputLine.length; start++) {
+    const slice = inputLine.slice(start);
+    if (matchFrom(start, pattern, slice, inputLine.length)) {
       return true;
-    } else {
-      return false;
     }
   }
-
-  // Slide over the input line from every possible starting index
-  for (let start = 0; start < inputLine.length; start++) {
-    if (matchFrom(start, pattern, inputLine)) {
-      return true; // Found a match
-    }
-  }
-  return false; // No match found
+  return false;
 }
 
-function matchFrom(start, pattern, input) {
-  let i = start; // Index in input
-  let j = 0; // Index in pattern
+// Main pattern matcher
+function matchFrom(start, pattern, input, originalLength) {
+  let i = 0; // index in input
+  let j = 0; // index in pattern
 
-  while (j < pattern.length && i < input.length) {
+  // Handle ^ anchor
+  if (pattern.startsWith("^")) {
+    if (start !== 0) return false; // ^ means match only from beginning
+    pattern = pattern.slice(1);
+  }
+
+  // Handle $ anchor
+  let endsWithDollar = false;
+  if (pattern.endsWith("$")) {
+    endsWithDollar = true;
+    pattern = pattern.slice(0, -1);
+  }
+
+  while (j < pattern.length) {
     const pChar = pattern[j];
+    const nextChar = pattern[j + 1];
+    const inputChar = input[i];
 
-    // \d \w
+    // Escape sequences: \d, \w
     if (pChar === "\\") {
-      const next = pattern[j + 1];
+      const esc = pattern[j + 1];
 
-      console.log("next", next);
-      if (next === "d") {
-        if (!isDigit(input[i])) return false;
+      if (esc === "d") {
+        if (!isDigit(inputChar)) return false;
         i++;
         j += 2;
         continue;
-      } else if (next === "w") {
-        if (!isAlphanumeric(input[i])) return false;
+      } else if (esc === "w") {
+        if (!isAlphanumeric(inputChar)) return false;
         i++;
         j += 2;
         continue;
       } else {
-        return false; // Unsupported escape
+        return false; // unsupported escape
       }
     }
 
-    // any charactar
-    if (pChar === ".") {
-      if (input[i] === undefined) return false;
-      i++;
-      j++;
+    // Optional quantifier '?'
+    if (nextChar === "?") {
+      if (inputChar === pChar) i++; // match 1
+      // whether matched or not, move pattern ahead
+      j += 2;
+      continue;
     }
 
-    // Match one or more times
-    if (pChar === "+") {
-      // char to match
-      const char = pattern[j - 1];
-      // index of char in input
-      const targetIndex = input.indexOf(char);
-      // char not found
-      if (targetIndex === -1) return false;
-
-      if (isQuantifier(char, input, targetIndex)) return true;
-      if (!isQuantifier(char, input, targetIndex)) return false;
-
-      // skip to target index
-      i = targetIndex + 1;
-      j++;
+    // One-or-more quantifier '+'
+    if (nextChar === "+") {
+      if (inputChar !== pChar) return false; // first must match
+      while (input[i] === pChar) i++; // consume all
+      j += 2;
+      continue;
     }
 
-    // [abc]
+    // Character class [abc]
     if (pChar === "[") {
       const closing = pattern.indexOf("]", j);
-      if (closing === -1) return false; // Malformed pattern
-      const charClass = pattern.slice(j + 1, closing);
+      if (closing === -1) return false; // malformed
 
-      const isNegated = charClass.startsWith("^");
-      const chars = isNegated ? charClass.slice(1) : charClass;
+      const classContent = pattern.slice(j + 1, closing);
+      const isNegated = classContent.startsWith("^");
+      const chars = isNegated ? classContent.slice(1) : classContent;
 
-      const match = chars.includes(input[i]);
+      const match = chars.includes(inputChar);
       if ((isNegated && match) || (!isNegated && !match)) return false;
 
       i++;
       j = closing + 1;
-    } else {
-      // Literal character match
-      if (pChar !== input[i]) return false;
+      continue;
+    }
+
+    // Dot: match any character
+    if (pChar === ".") {
+      if (inputChar === undefined) return false;
       i++;
       j++;
+      continue;
     }
+
+    // Literal match
+    if (pChar !== inputChar) return false;
+    i++;
+    j++;
   }
 
-  // Entire pattern matched
-  return j === pattern.length;
+  // At the end, handle $ anchor: input must be fully consumed
+  if (endsWithDollar && i !== input.length) {
+    return false;
+  }
+
+  return true;
 }
 
+// Helper: is input character a digit?
 function isDigit(c) {
-  console.log("d", c);
   return c >= "0" && c <= "9";
 }
 
+// Helper: is input character alphanumeric or underscore?
 function isAlphanumeric(c) {
   return /[a-zA-Z0-9_]/.test(c);
-}
-
-function isQuantifier(char, input, start) {
-  for (let i = start; i < input.length; i++) {
-    if (input[i] === char) return true;
-  }
-  return false;
 }
 
 // CLI logic
