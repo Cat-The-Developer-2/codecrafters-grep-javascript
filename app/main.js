@@ -63,22 +63,18 @@ function matchFrom(start, pattern, input, originalLength) {
     if (nextChar === "+") {
       if (inputChar !== pChar) return false;
 
-      let repeatStart = i;
+      // Must match at least one
+      let repeatCount = 0;
       while (input[i] === pChar) {
         i++;
+        repeatCount++;
       }
 
-      // Try to match the rest of the pattern after `+`
-      for (let repeatEnd = i; repeatEnd > repeatStart; repeatEnd--) {
-        const remainingInput = input.slice(repeatEnd);
-        const remainingPattern = pattern.slice(j + 2); // skip char and '+'
+      if (repeatCount === 0) return false;
 
-        if (matchFrom(0, remainingPattern, remainingInput, originalLength)) {
-          return true;
-        }
-      }
-
-      return false; // couldn't match the rest
+      // Match rest of pattern after the +
+      j += 2;
+      return matchFrom(0, pattern.slice(j), input.slice(i), originalLength);
     }
 
     // Character class [abc]
