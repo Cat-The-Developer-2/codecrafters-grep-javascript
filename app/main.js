@@ -34,10 +34,6 @@ function matchFrom(start, pattern, input) {
       i++;
       j++;
     } else if (pChar === "[") {
-      const closing = pattern.indexOf("]", j);
-      if (closing === -1) return false; // Malformed
-      const charClass = pattern.slice(j + 1, closing);
-      if (!charClass.includes(input[i])) return false;
       i++;
       j = closing + 1;
     } else {
@@ -58,6 +54,16 @@ function isDigit(c) {
 
 function isAlphanumeric(c) {
   return /[a-zA-Z0-9_]/.test(c);
+}
+
+function isPostiveNegativeChar(c, pattern) {
+  const closing = pattern.indexOf("]", j);
+  if (closing === -1) return false; // Malformed
+  const charClass = pattern.slice(j + 1, closing);
+
+  if (charClass[0] === "^") if (!charClass.includes(input[i])) return true;
+
+  if (!charClass.includes(input[i])) return false;
 }
 
 // CLI logic
