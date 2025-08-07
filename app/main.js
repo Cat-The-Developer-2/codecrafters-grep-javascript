@@ -84,15 +84,23 @@ function matchFrom(start, pattern, input, originalLength) {
     // Character class [abc]
     if (pChar === "[") {
       const closing = pattern.indexOf("]", j);
-      if (closing === -1) return false; // malformed
+      if (closing === -1) return false; // Malformed pattern
 
-      const classContent = pattern.slice(j + 1, closing);
-      const isNegated = classContent.startsWith("^");
-      const chars = isNegated ? classContent.slice(1) : classContent;
+      const charClass = pattern.slice(j + 1, closing);
 
-      const match = chars.includes(inputChar);
-      if ((isNegated && match) || (!isNegated && !match)) return false;
+      const isNegated = charClass.startsWith("^");
+      const chars = isNegated ? charClass.slice(1) : charClass;
 
+      const currentChar = input[i];
+      const match = chars.includes(currentChar);
+
+      // If it's a negated class and the char IS in the list => reject
+      // If it's a normal class and the char IS NOT in the list => reject
+      if ((isNegated && match) || (!isNegated && !match)) {
+        return false;
+      }
+
+      // Accept the character, move on
       i++;
       j = closing + 1;
       continue;
