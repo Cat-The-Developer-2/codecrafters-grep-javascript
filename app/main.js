@@ -10,9 +10,23 @@ function matchPattern(pattern, inputLine) {
 }
 
 // Main pattern matcher
-function matchFrom(start, pattern, input, originalLength) {
+function matchFrom(start, pattern, input) {
   let i = 0; // index in input
   let j = 0; // index in pattern
+
+  // Handle (a|b|c) alternation group
+  if (pattern.startsWith("(") && pattern.endsWith(")")) {
+    const inner = pattern.slice(1, -1);
+    const options = inner.split("|");
+
+    for (const word of options) {
+      if (input.includes(word)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   // Handle ^ anchor
   if (pattern.startsWith("^")) {
