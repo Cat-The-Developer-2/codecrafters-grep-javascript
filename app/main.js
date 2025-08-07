@@ -117,7 +117,7 @@ function matchFrom(start, pattern, input, originalLength) {
       continue;
     }
 
-    // Dot: match any character
+    // Wildcard: match any character
     if (pChar === ".") {
       if (inputChar === undefined) return false;
       i++;
