@@ -1,6 +1,12 @@
 function matchPattern(pattern, inputLine) {
   const maxStart = inputLine.length - pattern.length + 1;
 
+  // runs startwiths
+  // if (pattern[0] === "^") {
+  //   const startWithChar = pattern.slice(1);
+  //   return inputLine.startsWith(startWithChar);
+  // }
+  // runs combining char class
   for (let start = 0; start < maxStart; start++) {
     if (matchFrom(start, pattern, inputLine)) {
       return true; // Found a match
@@ -10,8 +16,7 @@ function matchPattern(pattern, inputLine) {
   return false; // No match anywhere
 }
 
-// meow
-
+// combining character class
 function matchFrom(start, pattern, input) {
   let i = start;
   let j = 0;
