@@ -131,6 +131,7 @@ function matchAST(ast, input, pos) {
     if (char === undefined) return [false, 0];
 
     if (node.type === "char") {
+      if (node.char === ".") return [true, 1]; // wildcard
       return char === node.char ? [true, 1] : [false, 0];
     }
 
