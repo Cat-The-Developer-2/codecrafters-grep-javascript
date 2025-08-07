@@ -34,7 +34,12 @@ function matchFrom(start, pattern, input) {
       i++;
       j++;
     } else if (pChar === "[") {
-      isPostiveNegativeChar(input[i], pattern, j);
+      const closing = pattern.indexOf("]", j);
+      if (isPostiveNegativeChar(input[i], pattern, j, closing)) {
+        return true;
+      } else {
+        return false;
+      }
       i++;
       j = closing + 1;
     } else {
@@ -57,8 +62,7 @@ function isAlphanumeric(c) {
   return /[a-zA-Z0-9_]/.test(c);
 }
 
-function isPostiveNegativeChar(c, pattern, j) {
-  const closing = pattern.indexOf("]", j);
+function isPostiveNegativeChar(c, pattern, j, closing) {
   if (closing === -1) return false; // Malformed
   const charClass = pattern.slice(j + 1, closing);
 
