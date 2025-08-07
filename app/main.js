@@ -29,17 +29,21 @@ function matchFrom(start, pattern, input) {
       } else {
         return false; // Unsupported escape
       }
-    }
-
-    if (pChar === ".") {
+    } else if (pChar === ".") {
       if (input[i] === undefined) return false;
       i++;
       j++;
-    }
-
-    if (pChar === "[") {
+    } else if (pChar === "[") {
       const closing = pattern.indexOf("]", j);
-      if (isPostiveNegativeChar(input[i], pattern, j, closing)) return true;
+      if (closing === -1) return false; // Malformed pattern
+      const charClass = pattern.slice(j + 1, closing);
+
+      const isNegated = charClass.startsWith("^");
+      const chars = isNegated ? charClass.slice(1) : charClass;
+
+      const match = chars.includes(input[i]);
+      if ((isNegated && match) || (!isNegated && !match)) return false;
+
       i++;
       j = closing + 1;
     } else {
@@ -60,15 +64,6 @@ function isDigit(c) {
 
 function isAlphanumeric(c) {
   return /[a-zA-Z0-9_]/.test(c);
-}
-
-function isPostiveNegativeChar(c, pattern, j, closing) {
-  if (closing === -1) return false; // Malformed
-  const charClass = pattern.slice(j + 1, closing);
-
-  if (charClass[0] === "^") if (!charClass.includes(c)) return true;
-
-  if (!charClass.includes(c)) return false;
 }
 
 // CLI logic
