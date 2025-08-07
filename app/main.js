@@ -33,14 +33,17 @@ function matchFrom(start, pattern, input) {
     if (pChar === "\\") {
       const next = pattern[j + 1];
 
+      console.log("next", next);
       if (next === "d") {
         if (!isDigit(input[i])) return false;
         i++;
         j += 2;
+        continue;
       } else if (next === "w") {
         if (!isAlphanumeric(input[i])) return false;
         i++;
         j += 2;
+        continue;
       } else {
         return false; // Unsupported escape
       }
@@ -97,6 +100,7 @@ function matchFrom(start, pattern, input) {
 }
 
 function isDigit(c) {
+  console.log("d", c);
   return c >= "0" && c <= "9";
 }
 
