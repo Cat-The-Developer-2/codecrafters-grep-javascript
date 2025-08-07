@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 function main() {
   const flag = process.argv[2];
   const pattern = process.argv[3];
@@ -29,7 +27,7 @@ function main() {
 
 function matchPattern(pattern, input, mustConsumeAll) {
   const ast = parse(pattern);
-  const [matched, consumed] = matchAST(ast, input, 0);
+  const [matched, consumed] = matchAST(ast, input, 0, 0);
   return matched && (!mustConsumeAll || consumed === input.length);
 }
 
@@ -106,80 +104,127 @@ function parse(pattern) {
 
 // ------------------------ MATCHER ------------------------
 
-function matchAST(ast, input, pos) {
-  function matchNode(node, input, pos) {
-    if (node.quant === "+") {
-      let count = 0;
-      let newPos = pos;
-      while (true) {
-        const [matched, consumed] = matchSingle(node, input, newPos);
-        if (!matched || consumed === 0) break;
-        count++;
-        newPos += consumed;
-      }
-      return count > 0 ? [true, newPos - pos] : [false, 0];
-    } else if (node.quant === "?") {
-      const [matched, consumed] = matchSingle(node, input, pos);
-      return matched ? [true, consumed] : [true, 0];
-    } else {
-      return matchSingle(node, input, pos);
-    }
+function matchAST(ast, input, pos, startIdx = 0) {
+  let posTracker = pos;
+  for (let i = startIdx; i < ast.length; i++) {
+    const [matched, consumed] = matchNode(ast, i, input, posTracker);
+    if (!matched) return [false, posTracker - pos];
+    posTracker += consumed;
   }
+  return [true, posTracker - pos];
+}
 
-  function matchSingle(node, input, pos) {
-    const char = input[pos];
-    if (char === undefined) return [false, 0];
+function matchNode(ast, index, input, pos) {
+  const node = ast[index];
 
-    if (node.type === "char") {
-      if (node.char === ".") return [true, 1]; // wildcard
-      return char === node.char ? [true, 1] : [false, 0];
+  if (node.quant === "+") {
+    let totalConsumed = 0;
+    let positions = [];
+
+    const [firstMatch, firstConsumed] = matchSingle(node, input, pos);
+    if (!firstMatch) return [false, 0];
+    totalConsumed += firstConsumed;
+    positions.push(totalConsumed);
+
+    let currentPos = pos + firstConsumed;
+    while (true) {
+      const [matched, consumed] = matchSingle(node, input, currentPos);
+      if (!matched) break;
+      currentPos += consumed;
+      totalConsumed += consumed;
+      positions.push(totalConsumed);
     }
 
-    if (node.type === "escape") {
-      if (node.code === "d") return /\d/.test(char) ? [true, 1] : [false, 0];
-      if (node.code === "w") return /\w/.test(char) ? [true, 1] : [false, 0];
-      return [false, 0];
-    }
-
-    if (node.type === "class") {
-      const match = node.chars.includes(char);
-      return node.negated
-        ? !match
-          ? [true, 1]
-          : [false, 0]
-        : match
-        ? [true, 1]
-        : [false, 0];
-    }
-
-    if (node.type === "group") {
-      for (const option of node.options) {
-        let posTracker = pos;
-        let allMatched = true;
-        for (const subNode of option) {
-          const [matched, consumed] = matchNode(subNode, input, posTracker);
-          if (!matched) {
-            allMatched = false;
-            break;
-          }
-          posTracker += consumed;
-        }
-        if (allMatched) return [true, posTracker - pos];
-      }
-      return [false, 0];
+    for (let i = positions.length - 1; i >= 0; i--) {
+      const [matchedRest, consumedRest] = matchAST(
+        ast,
+        input,
+        pos + positions[i],
+        index + 1
+      );
+      if (matchedRest) return [true, positions[i] + consumedRest];
     }
 
     return [false, 0];
   }
 
-  let posTracker = pos;
-  for (const node of ast) {
-    const [matched, consumed] = matchNode(node, input, posTracker);
-    if (!matched) return [false, posTracker];
-    posTracker += consumed;
+  if (node.quant === "?") {
+    const [matched, consumed] = matchSingle(node, input, pos);
+    if (matched) {
+      const [matchedRest, consumedRest] = matchAST(
+        ast,
+        input,
+        pos + consumed,
+        index + 1
+      );
+      if (matchedRest) return [true, consumed + consumedRest];
+    }
+
+    const [matchedRest, consumedRest] = matchAST(ast, input, pos, index + 1);
+    return matchedRest ? [true, consumedRest] : [false, 0];
   }
 
-  return [true, posTracker];
+  const [matched, consumed] = matchSingle(node, input, pos);
+  if (!matched) return [false, 0];
+
+  const [matchedRest, consumedRest] = matchAST(
+    ast,
+    input,
+    pos + consumed,
+    index + 1
+  );
+  return matchedRest ? [true, consumed + consumedRest] : [false, 0];
+}
+
+function matchSingle(node, input, pos) {
+  const char = input[pos];
+  if (char === undefined) return [false, 0];
+
+  if (node.type === "char") {
+    if (node.char === ".") return [true, 1]; // wildcard
+    return char === node.char ? [true, 1] : [false, 0];
+  }
+
+  if (node.type === "escape") {
+    if (node.code === "d") return /\d/.test(char) ? [true, 1] : [false, 0];
+    if (node.code === "w") return /\w/.test(char) ? [true, 1] : [false, 0];
+    return [false, 0];
+  }
+
+  if (node.type === "class") {
+    const match = node.chars.includes(char);
+    return node.negated
+      ? !match
+        ? [true, 1]
+        : [false, 0]
+      : match
+      ? [true, 1]
+      : [false, 0];
+  }
+
+  if (node.type === "group") {
+    for (const option of node.options) {
+      let posTracker = pos;
+      let allMatched = true;
+      for (const subNode of option) {
+        const [matched, consumed] = matchNode(
+          option,
+          option.indexOf(subNode),
+          input,
+          posTracker
+        );
+        if (!matched) {
+          allMatched = false;
+          break;
+        }
+        posTracker += consumed;
+      }
+      if (allMatched) return [true, posTracker - pos];
+    }
+    return [false, 0];
+  }
+
+  return [false, 0];
 }
 
 main();
