@@ -29,17 +29,17 @@ function matchFrom(start, pattern, input) {
       } else {
         return false; // Unsupported escape
       }
-    } else if (pChar === ".") {
+    }
+
+    if (pChar === ".") {
       if (input[i] === undefined) return false;
       i++;
       j++;
-    } else if (pChar === "[") {
+    }
+
+    if (pChar === "[") {
       const closing = pattern.indexOf("]", j);
-      if (isPostiveNegativeChar(input[i], pattern, j, closing)) {
-        return true;
-      } else {
-        return false;
-      }
+      if (isPostiveNegativeChar(input[i], pattern, j, closing)) return true;
       i++;
       j = closing + 1;
     } else {
