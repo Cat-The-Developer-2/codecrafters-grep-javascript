@@ -13,6 +13,21 @@ function matchPattern(pattern, inputLine) {
     return inputLine.endsWith(remainingPattern);
   }
 
+  // "optional" quantifier
+  if (pattern.endsWith("?")) {
+    const acceptablePattern = pattern.slice(0, -2);
+    const one = pattern[pattern.length - 2];
+
+    if (
+      inputLine === acceptablePattern + one ||
+      inputLine === acceptablePattern
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   // Slide over the input line from every possible starting index
   for (let start = 0; start < inputLine.length; start++) {
     if (matchFrom(start, pattern, inputLine)) {
