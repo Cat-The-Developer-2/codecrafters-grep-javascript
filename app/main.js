@@ -99,6 +99,10 @@ function matchFrom(start, pattern, input, originalLength) {
       const chars = isNegated ? charClass.slice(1) : charClass;
 
       const currentChar = input[i];
+
+      // Check if we've reached end of input
+      if (currentChar === undefined) return false;
+
       const match = chars.includes(currentChar);
 
       // If it's a negated class and the char IS in the list => reject
