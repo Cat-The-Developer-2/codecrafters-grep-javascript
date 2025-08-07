@@ -6,6 +6,13 @@ function matchPattern(pattern, inputLine) {
     return inputLine.startsWith(remainingPattern);
   }
 
+  // matches the end of a line
+  if (pattern.endsWith("$")) {
+    const remainingPattern = pattern.slice(0, -1);
+
+    return inputLine.endsWith(remainingPattern);
+  }
+
   // Slide over the input line from every possible starting index
   for (let start = 0; start < inputLine.length; start++) {
     if (matchFrom(start, pattern, inputLine)) {
