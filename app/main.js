@@ -34,6 +34,7 @@ function matchFrom(start, pattern, input) {
       i++;
       j++;
     } else if (pChar === "[") {
+      isPostiveNegativeChar(input[i], pattern);
       i++;
       j = closing + 1;
     } else {
@@ -61,9 +62,9 @@ function isPostiveNegativeChar(c, pattern) {
   if (closing === -1) return false; // Malformed
   const charClass = pattern.slice(j + 1, closing);
 
-  if (charClass[0] === "^") if (!charClass.includes(input[i])) return true;
+  if (charClass[0] === "^") if (!charClass.includes(c)) return true;
 
-  if (!charClass.includes(input[i])) return false;
+  if (!charClass.includes(c)) return false;
 }
 
 // CLI logic
