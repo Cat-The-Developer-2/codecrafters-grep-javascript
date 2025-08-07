@@ -63,18 +63,29 @@ function matchFrom(start, pattern, input, originalLength) {
     if (nextChar === "+") {
       if (inputChar !== pChar) return false;
 
-      // Must match at least one
-      let repeatCount = 0;
-      while (input[i] === pChar) {
-        i++;
-        repeatCount++;
+      // Find maximum number of matches
+      let maxMatches = 0;
+      let tempI = i;
+      while (tempI < input.length && input[tempI] === pChar) {
+        tempI++;
+        maxMatches++;
       }
 
-      if (repeatCount === 0) return false;
+      if (maxMatches === 0) return false;
 
-      // Match rest of pattern after the +
-      j += 2;
-      return matchFrom(0, pattern.slice(j), input.slice(i), originalLength);
+      // Try different numbers of matches (backtracking)
+      // Start from maximum and work backwards to minimum (1)
+      for (let matchCount = maxMatches; matchCount >= 1; matchCount--) {
+        const newI = i + matchCount;
+        const remainingInput = input.slice(newI);
+        const remainingPattern = pattern.slice(j + 2);
+
+        if (matchFromHelper(remainingPattern, remainingInput, endsWithDollar)) {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     // Character class [abc]
@@ -121,10 +132,122 @@ function matchFrom(start, pattern, input, originalLength) {
     return false;
   }
 
-  return i === input.length;
+  // Pattern matched successfully - we don't require consuming all input unless $ anchor
+  return true;
 }
 
-// Helper: is input character a digit?
+// Helper function for matching without anchors (used by + backtracking)
+function matchFromHelper(pattern, input, endsWithDollar) {
+  let i = 0; // index in input
+  let j = 0; // index in pattern
+
+  while (j < pattern.length) {
+    const pChar = pattern[j];
+    const nextChar = pattern[j + 1];
+    const inputChar = input[i];
+
+    // Escape sequences: \d, \w
+    if (pChar === "\\") {
+      const esc = pattern[j + 1];
+
+      if (esc === "d") {
+        if (!isDigit(inputChar)) return false;
+        i++;
+        j += 2;
+        continue;
+      } else if (esc === "w") {
+        if (!isAlphanumeric(inputChar)) return false;
+        i++;
+        j += 2;
+        continue;
+      } else {
+        return false; // unsupported escape
+      }
+    }
+
+    // Optional quantifier '?'
+    if (nextChar === "?") {
+      if (inputChar === pChar) i++; // match 1
+      // whether matched or not, move pattern ahead
+      j += 2;
+      continue;
+    }
+
+    // Handle one-or-more quantifier '+'
+    if (nextChar === "+") {
+      if (inputChar !== pChar) return false;
+
+      // Find maximum number of matches
+      let maxMatches = 0;
+      let tempI = i;
+      while (tempI < input.length && input[tempI] === pChar) {
+        tempI++;
+        maxMatches++;
+      }
+
+      if (maxMatches === 0) return false;
+
+      // Try different numbers of matches (backtracking)
+      for (let matchCount = maxMatches; matchCount >= 1; matchCount--) {
+        const newI = i + matchCount;
+        const remainingInput = input.slice(newI);
+        const remainingPattern = pattern.slice(j + 2);
+
+        if (matchFromHelper(remainingPattern, remainingInput, endsWithDollar)) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    // Character class [abc]
+    if (pChar === "[") {
+      const closing = pattern.indexOf("]", j);
+      if (closing === -1) return false; // Malformed pattern
+
+      const charClass = pattern.slice(j + 1, closing);
+
+      const isNegated = charClass.startsWith("^");
+      const chars = isNegated ? charClass.slice(1) : charClass;
+
+      const currentChar = input[i];
+      const match = chars.includes(currentChar);
+
+      // If it's a negated class and the char IS in the list => reject
+      // If it's a normal class and the char IS NOT in the list => reject
+      if ((isNegated && match) || (!isNegated && !match)) {
+        return false;
+      }
+
+      // Accept the character, move on
+      i++;
+      j = closing + 1;
+      continue;
+    }
+
+    // Dot: match any character
+    if (pChar === ".") {
+      if (inputChar === undefined) return false;
+      i++;
+      j++;
+      continue;
+    }
+
+    // Literal match
+    if (pChar !== inputChar) return false;
+    i++;
+    j++;
+  }
+
+  // At the end, handle $ anchor: input must be fully consumed
+  if (endsWithDollar && i !== input.length) {
+    return false;
+  }
+
+  // Pattern matched successfully
+  return true;
+}
 function isDigit(c) {
   return c >= "0" && c <= "9";
 }
