@@ -13,7 +13,9 @@ function main() {
   const cleanPattern = pattern.replace(/^\^/, "").replace(/\$$/, "");
 
   if (anchoredStart) {
-    if (matchPattern(cleanPattern, inputLine, anchoredEnd)) process.exit(0);
+    if (matchPattern(cleanPattern, inputLine, anchoredEnd)) {
+      process.exit(0);
+    }
   } else {
     for (let i = 0; i <= inputLine.length; i++) {
       if (matchPattern(cleanPattern, inputLine.slice(i), anchoredEnd)) {
@@ -24,11 +26,83 @@ function main() {
 
   process.exit(1);
 }
+
 function matchPattern(pattern, input, mustConsumeAll) {
   const ast = parse(pattern);
   const [matched, posAfterMatch] = matchSequence(ast, input, 0);
-  const consumed = posAfterMatch; // Since we start matching from pos 0 of the (potentially sliced) input
-  return matched && (!mustConsumeAll || consumed === input.length);
+  // posAfterMatch is the number of characters consumed since we start at index 0 of the (potentially sliced) input
+  return matched && (!mustConsumeAll || posAfterMatch === input.length);
+}
+
+// ------------------------ PARSER ------------------------
+
+function parse(pattern) {
+  let i = 0;
+
+  function parseQuantifier() {
+    if (pattern[i] === "+") return i++, "+";
+    if (pattern[i] === "?") return i++, "?";
+    return null;
+  }
+
+  function parseCharClass() {
+    const end = pattern.indexOf("]", i);
+    if (end === -1) throw new Error("Unclosed [");
+    const content = pattern.slice(i + 1, end);
+    const isNegated = content.startsWith("^");
+    const chars = isNegated ? content.slice(1) : content;
+    i = end + 1;
+    const quant = parseQuantifier();
+    return { type: "class", chars, negated: isNegated, quant };
+  }
+
+  function parseGroup() {
+    i++; // skip (
+    const options = [];
+    let branch = [];
+
+    while (i < pattern.length && pattern[i] !== ")") {
+      if (pattern[i] === "|") {
+        options.push(branch);
+        branch = [];
+        i++;
+      } else {
+        branch.push(...parseSequence());
+      }
+    }
+
+    if (pattern[i] !== ")") throw new Error("Unclosed group");
+    i++; // skip )
+    options.push(branch);
+    const quant = parseQuantifier();
+    return { type: "group", options, quant };
+  }
+
+  function parseSequence() {
+    const nodes = [];
+
+    while (i < pattern.length && pattern[i] !== ")" && pattern[i] !== "|") {
+      const c = pattern[i];
+      if (c === "(") {
+        nodes.push(parseGroup());
+      } else if (c === "[") {
+        nodes.push(parseCharClass());
+      } else if (c === "\\") {
+        i++;
+        const esc = pattern[i++];
+        const quant = parseQuantifier();
+        nodes.push({ type: "escape", code: esc, quant });
+      } else {
+        const char = pattern[i++];
+        const quant = parseQuantifier();
+        nodes.push({ type: "char", char, quant });
+      }
+    }
+
+    return nodes;
+  }
+
+  return parseSequence();
 }
 
 // ------------------------ MATCHER ------------------------
@@ -72,6 +146,15 @@ function matchSequence(ast, input, pos) {
     const consumptionPoints = [];
     let currentPos = pos;
 
+    // First, we must match at least once.
+    const [firstMatch, firstConsumed] = matchAtom(node, input, currentPos);
+    if (!firstMatch || firstConsumed === 0) {
+      return [false, pos]; // Failed to match even once.
+    }
+    currentPos += firstConsumed;
+    consumptionPoints.push(currentPos);
+
+    // Now, match greedily for any subsequent occurrences.
     while (true) {
       const [atomMatched, atomConsumed] = matchAtom(node, input, currentPos);
       // Stop if atom doesn't match or if it matches but consumes nothing
@@ -81,11 +164,6 @@ function matchSequence(ast, input, pos) {
       }
       currentPos += atomConsumed;
       consumptionPoints.push(currentPos);
-    }
-
-    // If we couldn't even match once, the '+' fails.
-    if (consumptionPoints.length === 0) {
-      return [false, pos];
     }
 
     // Backtrack: Try to match the rest of the sequence from each consumption point,
@@ -160,3 +238,5 @@ function matchAtom(node, input, pos) {
 
   return [false, 0];
 }
+
+main();
