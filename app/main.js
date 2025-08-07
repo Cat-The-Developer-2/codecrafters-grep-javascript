@@ -1,4 +1,11 @@
 function matchPattern(pattern, inputLine) {
+  // matches the start of a line
+  if (pattern.startsWith("^")) {
+    const remainingPattern = pattern.slice(1);
+
+    return inputLine.startsWith(remainingPattern);
+  }
+
   // Slide over the input line from every possible starting index
   for (let start = 0; start < inputLine.length; start++) {
     if (matchFrom(start, pattern, inputLine)) {
