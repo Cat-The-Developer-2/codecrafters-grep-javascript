@@ -125,7 +125,7 @@ function matchFrom(start, pattern, input, originalLength) {
     return false;
   }
 
-  return true;
+  return i === input.length;
 }
 
 // Helper: is input character a digit?
