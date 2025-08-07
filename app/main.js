@@ -58,7 +58,7 @@ function isDigit(c) {
 }
 
 function isAlphanumeric(c) {
-  return /^[a-zA-Z0-9_]$/.test(c);
+  return /[a-zA-Z0-9_]/.test(c);
 }
 
 // CLI main logic
