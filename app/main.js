@@ -258,7 +258,7 @@ function isDigit(c) {
 
 // Helper: is input character alphanumeric or underscore?
 function isAlphanumeric(c) {
-  return /\w/.test(c);
+  return /\w/g.test(c);
 }
 
 // CLI logic
