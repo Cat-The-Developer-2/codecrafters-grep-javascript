@@ -37,12 +37,12 @@ function matchFrom(start, pattern, input, originalLength) {
       const esc = pattern[j + 1];
 
       if (esc === "d") {
-        if (!isDigit(inputChar)) return false;
+        if (inputChar === undefined || !isDigit(inputChar)) return false;
         i++;
         j += 2;
         continue;
       } else if (esc === "w") {
-        if (!isAlphanumeric(inputChar)) return false;
+        if (inputChar === undefined || !isAlphanumeric(inputChar)) return false;
         i++;
         j += 2;
         continue;
@@ -61,7 +61,7 @@ function matchFrom(start, pattern, input, originalLength) {
 
     // Handle one-or-more quantifier '+'
     if (nextChar === "+") {
-      if (inputChar !== pChar) return false;
+      if (inputChar === undefined || inputChar !== pChar) return false;
 
       // Find maximum number of matches
       let maxMatches = 0;
@@ -126,7 +126,8 @@ function matchFrom(start, pattern, input, originalLength) {
     }
 
     // Literal match
-    if (pChar !== inputChar) return false;
+    if (pChar === undefined || inputChar === undefined || pChar !== inputChar)
+      return false;
     i++;
     j++;
   }
@@ -155,12 +156,12 @@ function matchFromHelper(pattern, input, endsWithDollar) {
       const esc = pattern[j + 1];
 
       if (esc === "d") {
-        if (!isDigit(inputChar)) return false;
+        if (inputChar === undefined || !isDigit(inputChar)) return false;
         i++;
         j += 2;
         continue;
       } else if (esc === "w") {
-        if (!isAlphanumeric(inputChar)) return false;
+        if (inputChar === undefined || !isAlphanumeric(inputChar)) return false;
         i++;
         j += 2;
         continue;
@@ -179,7 +180,7 @@ function matchFromHelper(pattern, input, endsWithDollar) {
 
     // Handle one-or-more quantifier '+'
     if (nextChar === "+") {
-      if (inputChar !== pChar) return false;
+      if (inputChar === undefined || inputChar !== pChar) return false;
 
       // Find maximum number of matches
       let maxMatches = 0;
@@ -216,6 +217,10 @@ function matchFromHelper(pattern, input, endsWithDollar) {
       const chars = isNegated ? charClass.slice(1) : charClass;
 
       const currentChar = input[i];
+
+      // Check if we've reached end of input
+      if (currentChar === undefined) return false;
+
       const match = chars.includes(currentChar);
 
       // If it's a negated class and the char IS in the list => reject
@@ -239,7 +244,8 @@ function matchFromHelper(pattern, input, endsWithDollar) {
     }
 
     // Literal match
-    if (pChar !== inputChar) return false;
+    if (pChar === undefined || inputChar === undefined || pChar !== inputChar)
+      return false;
     i++;
     j++;
   }
@@ -252,13 +258,15 @@ function matchFromHelper(pattern, input, endsWithDollar) {
   // Pattern matched successfully
   return true;
 }
+
+// Helper: is input character a digit?
 function isDigit(c) {
   return c >= "0" && c <= "9";
 }
 
 // Helper: is input character alphanumeric or underscore?
 function isAlphanumeric(c) {
-  return /\w/g.test(c);
+  return /^[a-zA-Z0-9_]$/.test(c);
 }
 
 // CLI logic
