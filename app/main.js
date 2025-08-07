@@ -29,6 +29,7 @@ function matchFrom(start, pattern, input) {
   while (j < pattern.length && i < input.length) {
     const pChar = pattern[j];
 
+    // \d \w
     if (pChar === "\\") {
       const next = pattern[j + 1];
 
@@ -43,11 +44,34 @@ function matchFrom(start, pattern, input) {
       } else {
         return false; // Unsupported escape
       }
-    } else if (pChar === ".") {
+    }
+
+    // any charactar
+    if (pChar === ".") {
       if (input[i] === undefined) return false;
       i++;
       j++;
-    } else if (pChar === "[") {
+    }
+
+    // Match one or more times
+    if (pChar === "+") {
+      // char to match
+      const char = pattern[j - 1];
+      // index of char in input
+      const targetIndex = input.indexOf(char);
+      // char not found
+      if (targetIndex === -1) return false;
+
+      if (isQuantifier(char, input, targetIndex)) return true;
+      if (!isQuantifier(char, input, targetIndex)) return false;
+
+      // skip to target index
+      i = targetIndex + 1;
+      j++;
+    }
+
+    // [abc]
+    if (pChar === "[") {
       const closing = pattern.indexOf("]", j);
       if (closing === -1) return false; // Malformed pattern
       const charClass = pattern.slice(j + 1, closing);
@@ -78,6 +102,13 @@ function isDigit(c) {
 
 function isAlphanumeric(c) {
   return /[a-zA-Z0-9_]/.test(c);
+}
+
+function isQuantifier(char, input, start) {
+  for (let i = start; i < input.length; i++) {
+    if (input[i] === char) return true;
+  }
+  return false;
 }
 
 // CLI logic
