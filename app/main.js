@@ -14,7 +14,7 @@ function main() {
     data = fs.readFileSync(0, "utf-8");
   }
 
-  const inputLine = data.trim();
+  const inputLine = data.trim().split("\n");
 
   if (flag !== "-E") {
     console.error("Expected first argument to be '-E'");
@@ -27,23 +27,25 @@ function main() {
 
   let matched = false;
 
-  if (anchoredStart) {
-    if (matchPattern(cleanPattern, inputLine, anchoredEnd)) {
-      console.log(inputLine); // Full input matches
-      process.exit(0);
-    }
-  } else {
-    for (let i = 0; i < inputLine.length; i++) {
-      const slice = inputLine.slice(i);
-      const ast = parse(cleanPattern);
-      const [ok, consumed] = matchSequence(ast, slice, 0);
-      if (ok && (!anchoredEnd || consumed === slice.length)) {
-        console.log(slice.slice(0, consumed)); // ✅ only the first match
-        process.exit(0); // ✅ exit immediately after first match
+  for (const line of inputLine) {
+    if (anchoredStart) {
+      if (matchPattern(cleanPattern, line, anchoredEnd)) {
+        console.log(line); // Full input matches
+        process.exit(0);
       }
-    }
+    } else {
+      for (let i = 0; i < line.length; i++) {
+        const slice = line.slice(i);
+        const ast = parse(cleanPattern);
+        const [ok, consumed] = matchSequence(ast, slice, 0);
+        if (ok && (!anchoredEnd || consumed === slice.length)) {
+          console.log(line);
+          process.exit(0);
+        }
+      }
 
-    if (matched) process.exit(0);
+      if (matched) process.exit(0);
+    }
   }
 
   process.exit(1);

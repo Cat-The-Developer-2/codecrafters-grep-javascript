@@ -1,7 +1,2 @@
-apple
-banana
-applause
-pineapple
-grape
-appliance
-app
+This is a line that matches search_pattern
+This is another line that matches search_pattern
