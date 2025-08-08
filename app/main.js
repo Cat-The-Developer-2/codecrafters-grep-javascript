@@ -1,7 +1,20 @@
+const fs = require("fs");
+const path = require("path");
+
 function main() {
+  const args = process.argv.slice(2);
   const flag = process.argv[2];
   const pattern = process.argv[3];
-  const inputLine = require("fs").readFileSync(0, "utf-8").trim();
+
+  let data;
+
+  if (args.length > 2) {
+    data = fs.readFileSync(path.join(process.cwd(), args[2]), "utf-8");
+  } else {
+    data = fs.readFileSync(0, "utf-8");
+  }
+
+  const inputLine = data.trim();
 
   if (flag !== "-E") {
     console.error("Expected first argument to be '-E'");
