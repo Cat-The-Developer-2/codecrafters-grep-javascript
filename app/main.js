@@ -25,16 +25,25 @@ function main() {
   const anchoredEnd = pattern.endsWith("$");
   const cleanPattern = pattern.replace(/^\^/, "").replace(/\$$/, "");
 
+  let matched = false;
+
   if (anchoredStart) {
     if (matchPattern(cleanPattern, inputLine, anchoredEnd)) {
+      console.log(inputLine); // Full input matches
       process.exit(0);
     }
   } else {
-    for (let i = 0; i <= inputLine.length; i++) {
-      if (matchPattern(cleanPattern, inputLine.slice(i), anchoredEnd)) {
-        process.exit(0);
+    for (let i = 0; i < inputLine.length; i++) {
+      const slice = inputLine.slice(i);
+      const ast = parse(cleanPattern);
+      const [ok, consumed] = matchSequence(ast, slice, 0);
+      if (ok && (!anchoredEnd || consumed === slice.length)) {
+        console.log(slice.slice(0, consumed)); // ✅ print only the match
+        matched = true;
+        // continue searching for more matches
       }
     }
+    if (matched) process.exit(0);
   }
 
   process.exit(1);
