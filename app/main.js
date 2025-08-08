@@ -38,10 +38,11 @@ function main() {
       const ast = parse(cleanPattern);
       const [ok, consumed] = matchSequence(ast, slice, 0);
       if (ok && (!anchoredEnd || consumed === slice.length)) {
-        matched = true;
-        // continue searching for more matches
+        console.log(slice.slice(0, consumed)); // ✅ only the first match
+        process.exit(0); // ✅ exit immediately after first match
       }
     }
+
     if (matched) process.exit(0);
   }
 
