@@ -30,8 +30,8 @@ function main() {
   for (const line of inputLine) {
     if (anchoredStart) {
       if (matchPattern(cleanPattern, line, anchoredEnd)) {
-        console.log(line); // Full input matches
-        process.exit(0);
+        console.log(line);
+        matched = true;
       }
     } else {
       for (let i = 0; i < line.length; i++) {
@@ -40,11 +40,10 @@ function main() {
         const [ok, consumed] = matchSequence(ast, slice, 0);
         if (ok && (!anchoredEnd || consumed === slice.length)) {
           console.log(line);
-          process.exit(0);
+          matched = true;
+          break; // break inner loop to avoid printing same line multiple times
         }
       }
-
-      if (matched) process.exit(0);
     }
   }
 
