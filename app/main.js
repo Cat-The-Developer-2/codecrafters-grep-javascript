@@ -47,6 +47,9 @@ function main() {
     }
   }
 
+  if (matched) {
+    process.exit(0);
+  }
   process.exit(1);
 }
 
