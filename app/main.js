@@ -3,18 +3,9 @@ const path = require("path");
 
 function main() {
   const args = process.argv.slice(2);
-  const flag = process.argv[2];
-  const pattern = process.argv[3];
-
-  let data;
-
-  if (args.length > 2) {
-    data = fs.readFileSync(path.join(process.cwd(), args[2]), "utf-8");
-  } else {
-    data = fs.readFileSync(0, "utf-8");
-  }
-
-  const inputLine = data.trim().split("\n");
+  const flag = args[0];
+  const pattern = args[1];
+  const filePaths = args.slice(2);
 
   if (flag !== "-E") {
     console.error("Expected first argument to be '-E'");
@@ -25,39 +16,58 @@ function main() {
   const anchoredEnd = pattern.endsWith("$");
   const cleanPattern = pattern.replace(/^\^/, "").replace(/\$$/, "");
 
+  const ast = parse(cleanPattern);
   let matched = false;
 
-  for (const line of inputLine) {
-    if (anchoredStart) {
-      if (matchPattern(cleanPattern, line, anchoredEnd)) {
+  // If no files provided, read from stdin
+  if (filePaths.length === 0) {
+    const data = fs.readFileSync(0, "utf-8");
+    const lines = data.split("\n");
+    for (const line of lines) {
+      if (isMatch(line, ast, anchoredStart, anchoredEnd)) {
         console.log(line);
         matched = true;
       }
-    } else {
-      for (let i = 0; i < line.length; i++) {
-        const slice = line.slice(i);
-        const ast = parse(cleanPattern);
-        const [ok, consumed] = matchSequence(ast, slice, 0);
-        if (ok && (!anchoredEnd || consumed === slice.length)) {
-          console.log(line);
+    }
+  } else {
+    // Multi-file support
+    for (const file of filePaths) {
+      const fileContent = fs.readFileSync(
+        path.join(process.cwd(), file),
+        "utf-8"
+      );
+      const lines = fileContent.split("\n");
+
+      for (const line of lines) {
+        if (isMatch(line, ast, anchoredStart, anchoredEnd)) {
+          if (filePaths.length > 1) {
+            console.log(`${file}:${line}`);
+          } else {
+            console.log(line);
+          }
           matched = true;
-          break; // break inner loop to avoid printing same line multiple times
         }
       }
     }
   }
 
-  if (matched) {
-    process.exit(0);
-  }
-  process.exit(1);
+  process.exit(matched ? 0 : 1);
 }
 
-function matchPattern(pattern, input, mustConsumeAll) {
-  const ast = parse(pattern);
-  const [matched, posAfterMatch] = matchSequence(ast, input, 0);
-  // posAfterMatch is the number of characters consumed since we start at index 0 of the (potentially sliced) input
-  return matched && (!mustConsumeAll || posAfterMatch === input.length);
+function isMatch(line, ast, anchoredStart, anchoredEnd) {
+  if (anchoredStart) {
+    const [ok, consumed] = matchSequence(ast, line, 0);
+    return ok && (!anchoredEnd || consumed === line.length);
+  }
+
+  for (let i = 0; i < line.length; i++) {
+    const slice = line.slice(i);
+    const [ok, consumed] = matchSequence(ast, slice, 0);
+    if (ok && (!anchoredEnd || consumed === slice.length)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // ------------------------ PARSER ------------------------
