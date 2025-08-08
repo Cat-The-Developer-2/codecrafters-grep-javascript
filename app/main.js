@@ -38,7 +38,6 @@ function main() {
       const ast = parse(cleanPattern);
       const [ok, consumed] = matchSequence(ast, slice, 0);
       if (ok && (!anchoredEnd || consumed === slice.length)) {
-        console.log(slice.slice(0, consumed)); // ✅ print only the match
         matched = true;
         // continue searching for more matches
       }
